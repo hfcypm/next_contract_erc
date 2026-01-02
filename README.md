@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# next_contract_erc 项目任务
 
-## Getting Started
+## 要求及描述
+    在next环境中完成，部署一个erc20合约到测试网，用wagmi, ethers, viem 分别完成5个子任务对应页面上5个组件 。
 
-First, run the development server:
+### 任务1
+    使用 交互库连接以太坊测试网，查询一个地址的余额。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 任务2
+    发送 ETH 到另一个地址 
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 任务3
+    调用一个 ERC-20 合约的 balanceOf 方法。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 任务4
+    监听 ERC-20 合约的 Transfer 事件
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 任务5
+    实现ERC20token的转账功能
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
