@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import WalletHeader from "./components/wallet-header.tsx";
 
 //项目生成默认字体配置
 const geistSans = Geist({
@@ -29,8 +30,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          {children}
+        <Providers className="flex flex-col min-h-screen">
+          <div>
+            {/* 钱包连接的标题头 */}
+            <WalletHeader />
+
+            <main className="flex flex-col w-full flex-1 items-center">
+              {children}
+            </main>
+          </div>
         </Providers>
       </body>
     </html>
