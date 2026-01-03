@@ -21,3 +21,6 @@
 
 # next
 /.next
+
+# env
+.env

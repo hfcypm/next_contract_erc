@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@tanstack/react-query": "^5.90.16",
+    "ethers": "^6.16.0",
     "next": "^16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -24,12 +26,27 @@
     "@types/node": "^22.19.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.1.2",
+    "solc": "^0.8.33",
     "tailwindcss": "^4",
     "typescript": "~5.8.0"
   },
-  "type": "module"
+  "type": "module",
+  "description": "This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hfcypm/next_contract_erc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hfcypm/next_contract_erc/issues"
+  },
+  "homepage": "https://github.com/hfcypm/next_contract_erc#readme"
 }
