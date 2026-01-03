@@ -1,23 +1,57 @@
-# next_contract_erc 项目任务
+# Sample Hardhat 3 Beta Project (`node:test` and `viem`)
 
-## 要求及描述
-    在next环境中完成，部署一个erc20合约到测试网，用wagmi, ethers, viem 分别完成5个子任务对应页面上5个组件 。
+This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.
 
-### 任务1
-    使用 交互库连接以太坊测试网，查询一个地址的余额。
+To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
 
-### 任务2
-    发送 ETH 到另一个地址 
+## Project Overview
 
-### 任务3
-    调用一个 ERC-20 合约的 balanceOf 方法。
+This example project includes:
 
-### 任务4
-    监听 ERC-20 合约的 Transfer 事件
+- A simple Hardhat configuration file.
+- Foundry-compatible Solidity unit tests.
+- TypeScript integration tests using [`node:test`](nodejs.org/api/test.html), the new Node.js native test runner, and [`viem`](https://viem.sh/).
+- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
 
-### 任务5
-    实现ERC20token的转账功能
+## Usage
 
+### Running Tests
 
+To run all the tests in the project, execute the following command:
 
+```shell
+npx hardhat test
+```
 
+You can also selectively run the Solidity or `node:test` tests:
+
+```shell
+npx hardhat test solidity
+npx hardhat test nodejs
+```
+
+### Make a deployment to Sepolia
+
+This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+
+To run the deployment to a local chain:
+
+```shell
+npx hardhat ignition deploy ignition/modules/Counter.ts
+```
+
+To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+
+You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+
+To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+
+```shell
+npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+```
+
+After setting the variable, you can run the deployment with the Sepolia network:
+
+```shell
+npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+```
