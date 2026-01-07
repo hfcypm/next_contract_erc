@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import WalletHeader from "./components/wallet-header.tsx";
+import WalletHeader from "./components/wallet-header";
 
 //项目生成默认字体配置
 const geistSans = Geist({
