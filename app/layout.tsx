@@ -30,8 +30,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers className="flex flex-col min-h-screen">
-          <div>
+        <Providers>
+          <div className="flex flex-col min-h-screen">
             {/* 钱包连接的标题头 */}
             <WalletHeader />
 
