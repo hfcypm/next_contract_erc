@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import transferConfig from '../const/transferConfig';
 import ERC20_ABI from '../const/ercABI';
+
 
 
 export default function ListenEventsPage() {
@@ -14,12 +15,65 @@ export default function ListenEventsPage() {
   //需要转账的token数量
   const [transferAmount, setTransferAmount] = useState('');
 
+  //监听的事件数据
+  const [events, setEvents] = useState([]);
+  //添加事件开关
+  const [isListening, setListening] = useState(false);
+  //监听的事件数据
+  const [contentEvent, setContentEvent] = useState('--');
+
   const dealAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTargetAddress(event.target.value);
   }
 
   const dealAmountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTransferAmount(event.target.value)
+  }
+
+  //添加转账监听事件
+  useEffect(() => {
+    let provider: ethers.JsonRpcProvider;
+    let contract: ethers.Contract
+    const setUpEventsListener = async () => {
+      //开启监听事件
+      if (!isListening) {
+        return;
+      }
+      provider = new ethers.JsonRpcProvider(transferConfig.rpcUrl);
+      //合约
+      contract = new ethers.Contract(transferConfig.tokenContractAddress, ERC20_ABI, provider);
+      //监听事件
+      contract.on('Transfer', (from, to, amount, event) => {
+        // 获取事件信息并打印
+        const evInfo = {
+          from,
+          to,
+          amount,
+          event
+        }
+        //当前的转账信息
+        console.log('监听到的事件内容:', evInfo);
+        setContentEvent(`监听事件内容: ${from} 转账 ${amount} 个代币到 ${to}`);
+      });
+    }
+
+    setUpEventsListener();
+    return () => {
+      //关闭监听事件
+      if (isListening) {
+        contract.removeAllListeners();
+      }
+    }
+  }, [isListening]);
+
+  //开始监听事件
+  const startLisener = () => {
+    setListening(true)
+  }
+
+  //停止监听事件
+  const stopListener = () => {
+    setListening(false);
   }
 
   //转账功能
@@ -111,6 +165,17 @@ export default function ListenEventsPage() {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-2">监听 ERC-20 合约的 Transfer 事件</h1>
+      <div className="flex flex-row items-center">
+        <button onClick={startLisener} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">添加监听状态</button>
+        <button onClick={stopListener} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2">移除监听</button>
+      </div>
+      <div className="flex flex-col">
+        <div className="w-fit font-bold text-red-500 size-16">监听状态: {isListening ? '监听中......' : '未监听'}</div>
+      </div>
+      <div className="flex flex-col h-auto">
+        <div className="w-fit font-bold text-red-500 size-16">监听事件内容:</div>
+        <div className="w-fit font-bold text-red-500 size-16">{contentEvent}</div>
+      </div>
       <div className="flex flex-row items-center">
         <div>转账账户为自己的MetaMask钱包</div>
         <div className="font-bold ml-3 text-red-500">目标地址及转账数量需要自己输入</div>
