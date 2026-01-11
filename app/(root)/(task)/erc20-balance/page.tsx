@@ -51,7 +51,7 @@ export default function Erc20BalancePage() {
     setAddress(`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`);
     setName(`${name}`);
     setSymbol(`${symbols}`);
-    setBalance(`${banace}`);
+    setBalance(`${ethers.formatEther(banace)}`);
     setLoading(false);
   }
 
