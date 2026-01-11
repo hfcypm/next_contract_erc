@@ -2,6 +2,7 @@
 
 import { ethers } from 'ethers';
 import { useState } from 'react';
+import { createPublicClient, http } from 'viem';
 import { useBalance } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 
@@ -43,7 +44,7 @@ export default function CheckBalancePage() {
     }
   };
 
-
+  //-----------------------------wagmi--------------------------------
   //主网查询余额
   const { data: mainnetData, refetch: refetchMainnet } = useBalance({
     address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS as `0x${string}`,
@@ -69,6 +70,32 @@ export default function CheckBalancePage() {
     setSepBalance(`${sepValue} ${sepSymbol}`);
     console.log('wagmi Seplolia查询余额:', sepResult?.data?.value);
   }
+
+  //------------------------viem-------------------------------------
+  //viem 查询原生币
+  const handleClickViem = async () => {
+    setLoading(true)
+    // 1. 创建对应链的Public Client（核心：连接指定链的RPC）
+    const mainClient = createPublicClient({
+      chain: mainnet,
+      transport: http(`${process.env.NEXT_PUBLIC_ETH_RPC_URL}`),
+    });
+    const sepClient = createPublicClient({
+      chain: sepolia,
+      transport: http(`${process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL}`),
+    });
+    // 2. 核心：查询原生币余额（返回bigint类型的wei值，避免精度丢失）
+    const balance = await mainClient.getBalance({
+      address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS as `0x${string}`,
+    });
+    const sepBalance = await sepClient.getBalance({
+      address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS as `0x${string}`,
+    });
+    setBalance(`${ethers.formatEther(balance)} ETH`);
+    setSepBalance(`${ethers.formatEther(sepBalance)} ETH`);
+    setLoading(false)
+  }
+
   return (
     <div className="flex flex-col p-4">
 
@@ -76,6 +103,7 @@ export default function CheckBalancePage() {
       <div className="flex flex-row">
         <div onClick={handleClick} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2">查询(ethers)</div>
         <div onClick={handleClickWagmi} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2 ml-2">查询(wagmi)</div>
+        <div onClick={handleClickViem} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2 ml-2">查询(viem)</div>
       </div>
 
       <div onClick={clearData} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2 mt-2">清空数据</div>
