@@ -26,8 +26,8 @@ export default function CheckBalancePage() {
       //连接Sepolia测试网节点
       const sepProvider = new ethers.JsonRpcProvider(`${process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL}`);
 
-      //查询主网地址余额
-      const balance = await provider.getBalance(`vitalik.eth`);
+      //查询主网地址余额----使用钱包地址直接查询
+      const balance = await provider.getBalance(`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`);
       setBalance(`${ethers.formatEther(balance)} ETH`);
 
       //查询Sepolia测试网地址余额
@@ -41,17 +41,17 @@ export default function CheckBalancePage() {
     }
   };
   return (
-    <div className="flex flex-col items-center p-4">
+    <div className="flex flex-col p-4">
 
       <h1 className="text-2xl font-bold mb-4">查询地址余额</h1>
-      <div className="flex flex-row items-center">
+      <div className="flex flex-row">
         <div onClick={handleClick} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2">开始查询</div>
         <div onClick={clearData} className="w-fit h-fit mx-3 rounded-md bg-blue-500 text-white text-center p-2">清空数据</div>
       </div>
 
       {isLoading && <div className="text-center">正在努力查询中...</div>}
 
-      <div className="flex-col items-center">
+      <div className="flex-col">
         <p className="my-5">ETH当前余额:{balance}</p>
         <p className="my-5">SEP当前余额:{sepBalance}</p>
       </div>
