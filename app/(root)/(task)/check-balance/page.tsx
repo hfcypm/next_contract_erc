@@ -2,6 +2,8 @@
 
 import { ethers } from 'ethers';
 import { useState } from 'react';
+import { useBalance } from 'wagmi';
+import { mainnet, sepolia } from 'wagmi/chains';
 
 // 利用公共rpc节点连接以太坊网络
 // 可以在 https://chainlist.org 上找到
@@ -40,14 +42,43 @@ export default function CheckBalancePage() {
       setLoading(false)
     }
   };
+
+
+  //主网查询余额
+  const { data: mainnetData, refetch: refetchMainnet } = useBalance({
+    address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS as `0x${string}`,
+    chainId: mainnet.id,
+  });
+  //测试网查询余额
+  const { data: sepoliaData, refetch: refetchSepolia } = useBalance({
+    address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS as `0x${string}`,
+    chainId: sepolia.id,
+  });
+  //使用wagmi查询余额
+  const handleClickWagmi = async () => {
+    setLoading(true)
+    const [mainResult, sepResult] = await Promise.all([refetchMainnet(), refetchSepolia()]);
+    console.log('wagmi Mainnet查询余额:', mainResult?.data?.value);
+    setLoading(false);
+    const value = mainResult?.data?.formatted || '--';
+    const symbol = mainResult?.data?.symbol;
+    setBalance(`${value} ${symbol}`);
+
+    const sepValue = sepResult?.data?.formatted || '--';
+    const sepSymbol = sepResult?.data?.symbol;
+    setSepBalance(`${sepValue} ${sepSymbol}`);
+    console.log('wagmi Seplolia查询余额:', sepResult?.data?.value);
+  }
   return (
     <div className="flex flex-col p-4">
 
       <h1 className="text-2xl font-bold mb-4">查询地址余额</h1>
       <div className="flex flex-row">
-        <div onClick={handleClick} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2">开始查询</div>
-        <div onClick={clearData} className="w-fit h-fit mx-3 rounded-md bg-blue-500 text-white text-center p-2">清空数据</div>
+        <div onClick={handleClick} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2">查询(ethers)</div>
+        <div onClick={handleClickWagmi} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2 ml-2">查询(wagmi)</div>
       </div>
+
+      <div onClick={clearData} className="w-fit h-fit rounded-md bg-blue-500 text-white text-center p-2 mt-2">清空数据</div>
 
       {isLoading && <div className="text-center">正在努力查询中...</div>}
 
