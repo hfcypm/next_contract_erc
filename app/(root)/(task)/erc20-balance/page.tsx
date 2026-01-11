@@ -6,6 +6,9 @@ import { ethers } from 'ethers';
 import ERC20_ABI from '../const/ercABI'
 import { useState } from 'react';
 import mintConfig from '../const/mintConfig';
+import { useReadContract } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
+import { formatUnits } from 'viem/utils';
 
 export default function Erc20BalancePage() {
 
@@ -52,6 +55,24 @@ export default function Erc20BalancePage() {
     setName(`${name}`);
     setSymbol(`${symbols}`);
     setBalance(`${ethers.formatEther(banace)}`);
+    setLoading(false);
+  }
+
+  // wagmi查询
+  //1. 构造配置对象
+  const { refetch, isLoading, error } = useReadContract({
+    address: process.env.NEXT_PUBLIC_ERC20_CONTRACT_ADDRESS as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'balanceOf',
+    args: [`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`],
+    chainId: sepolia.id,
+  });
+  //2. 开始查询
+  const queryWagmi = async () => {
+    setLoading(true);
+    setAddress(`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`);
+    const { data: balance } = await refetch();
+    setBalance(`${ethers.formatEther(balance?.toString() || '--')} ETH`);
     setLoading(false);
   }
 
@@ -122,10 +143,11 @@ export default function Erc20BalancePage() {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">调用一个 ERC-20 合约的 balanceOf</h1>
       <p>合约查询（余额及其他信息测试-Use Contract）</p>
-      <div className='flex flex-row items-center justify-center py-5'>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={query}>查询</button>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-5" onClick={clearData}>清空</button>
+      <div className='flex flex-row py-5'>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={query}>查询(ethers)</button>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2" onClick={queryWagmi}>查询(wagmi)</button>
       </div>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={clearData}>清空</button>
       {loading && <div className="text-center py-3">正在努力查询中...</div>}
       <div className='flex flex-col width-[800px]'>
         <p>合约地址: {address}</p>
