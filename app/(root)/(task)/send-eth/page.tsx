@@ -3,6 +3,10 @@
 
 import { ethers } from 'ethers'
 import { useState } from 'react';
+import { useAccount, useBalance, useReadContract, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import ERC20_ABI from '../const/ercABI';
+import { sepolia } from 'wagmi/chains';
+import React from 'react';
 
 export default function SendEthPage() {
 
@@ -75,6 +79,101 @@ export default function SendEthPage() {
     setLoading(false);
   }
 
+  // wagmi查询
+  //查询地址钱包1的余额以及地址
+  //1. 构造配置对象
+  const { refetch: refetchBalance1 } = useBalance({
+    address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS as `0x${string}`,
+    chainId: sepolia.id,
+  });
+
+  const { refetch: refetchAfterBalance1 } = useBalance({
+    address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS as `0x${string}`,
+    chainId: sepolia.id,
+  });
+
+  //2. 开始查询
+  const queryWagmi1 = async () => {
+    setAddress1(`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`);
+    const { data: balance } = await refetchBalance1();
+    setBalance1(`${balance?.formatted || '--'} ETH`);
+  }
+
+  //查询地址钱包2的余额以及地址
+  //1. 构造配置对象
+  const { refetch: refetchBalance2 } = useBalance({
+    address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as `0x${string}`,
+    chainId: sepolia.id,
+  });
+
+  const { refetch: refetchAfterBalance2 } = useBalance({
+    address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as `0x${string}`,
+    chainId: sepolia.id,
+  });
+
+  //2. 开始查询
+  const queryWagmi2 = async () => {
+    setAddress2(`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS2}`);
+    const { data: balance } = await refetchBalance2();
+    setBalance2(`${balance?.formatted || '--'} ETH`);
+  }
+
+  // 3. wagmi v2 发送交易核心Hook
+  //交易
+  const { address: connectedAddress, isConnected } = useAccount();
+  // 当前连接钱包的余额
+  const {
+    data: hash,
+    sendTransaction,
+    isPending: isSending,
+    error: sendError
+  } = useSendTransaction()
+
+  // 等待交易确认
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    error: confirmError
+  } = useWaitForTransactionReceipt({ hash })
+
+  // 监听交易状态变化
+  React.useEffect(() => {
+    if (isConfirmed && hash) {
+      setLoading(false);
+      console.log('转账成功............');
+      // 刷新发送方和接收方的余额
+      queryAfterBalance1();
+      queryAfterBalance2();
+    }
+  }, [isConfirmed, hash]);
+
+  //wagmi方式 发送ETH 至 另外一个地址
+  const transferWagmi = async () => {
+    //1. 转账之前查询余额
+    queryWagmi1();
+    queryWagmi2();
+    if (!isConnected) {
+      alert('请先连接钱包');
+      return;
+    }
+    setLoading(true);
+    //2. 地址1 发起 向地址2 转账 0.01 ETH
+    sendTransaction({
+      to: `${process.env.NEXT_PUBLIC_BALANCE_ADDRESS2}` as `0x${string}`,
+      value: ethers.parseEther("0.01"),
+    })
+    console.log("使用wagmi已发送...等待中......");
+  }
+
+  const queryAfterBalance1 = async () => {
+    const { data: balance } = await refetchAfterBalance1();
+    setAfterBalance1(`${balance?.formatted || '--'} ETH`);
+  }
+  const queryAfterBalance2 = async () => {
+    const { data: balance } = await refetchAfterBalance2();
+    setAfterBalance2(`${balance?.formatted || '--'} ETH`);
+  }
+
   const clearData = () => {
     setAddress1('--');
     setAddress2('--');
@@ -96,9 +195,11 @@ export default function SendEthPage() {
       <h2 className="font-bold text-2xl mt-4">Wallet钱包类</h2>
       <p>Wallet 类继承了 Signer 类，并且开发者可以像包含私钥的外部拥有帐户（EOA）一样，用它对交易和消息进行签名。</p>
       <div>--------------------------------------------------------</div>
-
-      <button onClick={transfer} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md">发送 ETH</button>
-      <button onClick={clearData} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md ml-2">清空 ETH</button>
+      <div className='flex flex-row'>
+        <button onClick={transfer} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md">发送 ETH(ethers)</button>
+        <button onClick={transferWagmi} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md ml-2">发送 ETH(wagmi)</button>
+      </div>
+      <button onClick={clearData} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md">清空 ETH</button>
 
       {loading ? <div className='text-center'>加载中...</div> : null}
 
