@@ -7,6 +7,9 @@ import { useAccount, useBalance, useReadContract, useSendTransaction, useWaitFor
 import ERC20_ABI from '../const/ercABI';
 import { sepolia } from 'wagmi/chains';
 import React from 'react';
+import { Address, Chain, createPublicClient, http, WalletClient, createWalletClient, parseEther, fromBlobs } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { waitForTransactionReceipt } from 'viem/actions';
 
 export default function SendEthPage() {
 
@@ -79,7 +82,7 @@ export default function SendEthPage() {
     setLoading(false);
   }
 
-  // wagmi查询
+  //------------------------------------ wagmi查询 ------------------------------------
   //查询地址钱包1的余额以及地址
   //1. 构造配置对象
   const { refetch: refetchBalance1 } = useBalance({
@@ -174,6 +177,150 @@ export default function SendEthPage() {
     setAfterBalance2(`${balance?.formatted || '--'} ETH`);
   }
 
+
+
+  //------------------------------------ viem发送ETH ------------------------------------
+  // 钱包状态
+  // 钱包状态
+  const [address, setAddress] = useState<Address | null>(null); // 当前钱包地址
+  const [chain, setChain] = useState<Chain | null>(null); // 当前链
+  const [isConnectedWallet, setConnectedWallet] = useState<boolean>(false);// 连接状态
+  // 1. 创建加载配置（仅发sepolia测试网）
+  const publicClient = createPublicClient({
+    chain: sepolia,
+    transport: http(`${process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL}`),
+  });
+
+  // 2. 发送交易ETH（前提需要连接钱包） 再提前查询好余额 以便于对比
+  const queryBlanceViem = async () => {
+    if (!isConnectedWallet) {
+      alert('请先连接钱包');
+      return;
+    }
+    if (!address) {
+      alert('连接钱包的地址为空.... 请示检查连接状态');
+      return;
+    }
+    setLoading(true);
+    try {
+      //钱包1 余额
+      const walletBalance = await publicClient.getBalance({
+        address: address as Address,
+      });
+      setBalance1(`${ethers.formatEther(walletBalance)} ETH`);
+      //钱包2 余额
+      const walletBalance2 = await publicClient.getBalance({
+        address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as Address,
+      });
+      setBalance2(`${ethers.formatEther(walletBalance2)} ETH`);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  };
+
+  // 查询转账后的余额
+  const queryBlanceAfterViem = async () => {
+    try {
+      //钱包1 余额
+      const walletBalance = await publicClient.getBalance({
+        address: address as Address,
+      });
+      setAfterBalance1(`${ethers.formatEther(walletBalance)} ETH`);
+      //钱包2 余额
+      const walletBalance2 = await publicClient.getBalance({
+        address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as Address,
+      });
+      setAfterBalance2(`${ethers.formatEther(walletBalance2)} ETH`);
+    } catch (error) {
+      console.log(error);
+    }
+    setLoading(true);
+  };
+  //开始转账
+  const sendETHViem = async () => {
+    if (!isConnectedWallet) {
+      alert('请先连接钱包');
+      return;
+    }
+    if (!address) {
+      alert('连接钱包的地址为空.... 请示检查连接状态');
+      return;
+    }
+    setLoading(true);
+    //-------viem真实发送ETH 数据------------------
+    try {
+      //创建钱包及添加(当前连接钱包的私钥)
+      const walletClient: WalletClient = createWalletClient({
+        chain: sepolia,
+        transport: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
+        account: address,
+      });
+      //构建发送交易对象
+      const [account] = await walletClient.getAddresses();
+      const sendReqObj = {
+        account,
+        to: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as Address,
+        value: parseEther("0.01"),
+        chain: sepolia,
+      };
+      //发送交易请求
+      const sendHash = await walletClient.sendTransaction(sendReqObj);
+      console.log('交易哈希:', sendHash);
+
+      //等待交易完成
+      const sendReceipt = await waitForTransactionReceipt(walletClient, {
+        hash: sendHash
+      });
+
+      console.log('交易收据:', sendReceipt);
+      //查询转账后的余额
+      queryBlanceAfterViem();
+    } catch (error) {
+      console.log(error);
+      setLoading(false);
+    }
+  }
+
+  //单独写一个连接钱包的方法
+  const connectWallet = async () => {
+    try {
+      // 检测是否安装MetaMask
+      if (!window.ethereum) {
+        alert('未检测到MetaMask，请先安装!!!!!!!');
+        return;
+      }
+      // 步骤1：请求钱包账户权限
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      }) as string[];
+      if (!accounts.length) {
+        alert(' 未获取到钱包账户');
+        return;
+      }
+      const userAddress = accounts[0] as Address;
+      //更新地址
+      setAddress(userAddress);
+      // 步骤2：获取当前链信息
+      const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+      const chainId = parseInt(chainIdHex, 16);
+      // 校验是否为Sepolia测试网（链ID：11155111）
+      if (chainId !== sepolia.id) {
+        alert(`请切换到Sepolia测试网（当前链ID：${chainId}）`);
+        return;
+      }
+      //更新链
+      setChain(sepolia);
+      //更新连接状态
+      setConnectedWallet(true);
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
+  };
+
+
+
   const clearData = () => {
     setAddress1('--');
     setAddress2('--');
@@ -196,10 +343,13 @@ export default function SendEthPage() {
       <p>Wallet 类继承了 Signer 类，并且开发者可以像包含私钥的外部拥有帐户（EOA）一样，用它对交易和消息进行签名。</p>
       <div>--------------------------------------------------------</div>
       <div className='flex flex-row'>
-        <button onClick={transfer} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md">发送 ETH(ethers)</button>
-        <button onClick={transferWagmi} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md ml-2">发送 ETH(wagmi)</button>
+        <button onClick={transfer} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md">发送 ETH(ethers)</button>
+        <button onClick={transferWagmi} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2">发送 ETH(wagmi)</button>
+        <button onClick={transferWagmi} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2">发送 ETH(viem)</button>
       </div>
-      <button onClick={clearData} className="bg-purple-500 text-white px-4 py-2 mt-5 rounded-md">清空 ETH</button>
+      <button onClick={connectWallet} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md">连接钱包</button>
+      <button onClick={queryBlanceViem} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2">查询转账前余额</button>
+      <button onClick={clearData} className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2" >清空 ETH</button>
 
       {loading ? <div className='text-center'>加载中...</div> : null}
 
