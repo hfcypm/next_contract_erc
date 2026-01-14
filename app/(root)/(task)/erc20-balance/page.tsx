@@ -9,6 +9,7 @@ import mintConfig from '../const/mintConfig';
 import { useReadContract } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
 import { formatUnits } from 'viem/utils';
+import { createPublicClient, http } from 'viem';
 
 export default function Erc20BalancePage() {
 
@@ -58,6 +59,8 @@ export default function Erc20BalancePage() {
     setLoading(false);
   }
 
+
+  //------------------------wagmi查询-------------------------------------
   // wagmi查询
   //1. 构造配置对象
   const { refetch, isLoading, error } = useReadContract({
@@ -73,6 +76,24 @@ export default function Erc20BalancePage() {
     setAddress(`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`);
     const { data: balance } = await refetch();
     setBalance(`${ethers.formatEther(balance?.toString() || '--')} ETH`);
+    setLoading(false);
+  }
+
+  //------------------------viem查询-------------------------------------
+  const queryViem = async () => {
+    setLoading(true);
+    setAddress(`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`);
+    const client = createPublicClient({
+      chain: sepolia,
+      transport: http(),
+    });
+    const data = await client.readContract({
+      address: process.env.NEXT_PUBLIC_ERC20_CONTRACT_ADDRESS as `0x${string}`,
+      abi: ERC20_ABI,
+      functionName: 'balanceOf',
+      args: [`${process.env.NEXT_PUBLIC_BALANCE_ADDRESS}`],
+    });
+    setBalance(`${ethers.formatEther(data?.toString() || '--')} ETH`);
     setLoading(false);
   }
 
@@ -146,6 +167,7 @@ export default function Erc20BalancePage() {
       <div className='flex flex-row py-5'>
         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={query}>查询(ethers)</button>
         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2" onClick={queryWagmi}>查询(wagmi)</button>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2" onClick={queryViem}>查询(viem)</button>
       </div>
       <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={clearData}>清空</button>
       {loading && <div className="text-center py-3">正在努力查询中...</div>}
