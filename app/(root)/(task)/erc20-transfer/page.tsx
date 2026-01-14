@@ -1,9 +1,12 @@
 // app/erc20-transfer/page.tsx
 'use client'
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import transferConfig from '../const/transferConfig';
 import { ethers } from 'ethers';
 import ERC20_ABI from '../const/ercABI';
+import { useAccountEffect, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
+import { parseEther } from 'ethers/utils';
 
 
 export default function Erc20TransferPage() {
@@ -23,7 +26,7 @@ export default function Erc20TransferPage() {
     setTransferAmount(event.target.value)
   }
 
-  //转账功能
+  //转账功能(ethers)
   const transfer = async () => {
     if (!targetAddress) {
       alert('请输入目标地址');
@@ -109,6 +112,64 @@ export default function Erc20TransferPage() {
     setBalance(`${ethers.formatEther(balance)}`);
   }
 
+  /////////
+  //转账功能(使用wagmi方式)
+  // 连接钱包状态
+  const [isConnected, setConnected] = useState<boolean>(false);
+  useAccountEffect({
+    onConnect(data) {
+      console.log('连接钱包成功', data);
+      setConnected(true);
+    },
+    onDisconnect() {
+      console.log('断开连接钱包成功');
+      setConnected(false);
+    },
+  })
+
+  //合约写入交易
+  const { writeContract, data: hash } = useWriteContract()
+  //确认状态可以使用以处理 view
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed
+  } = useWaitForTransactionReceipt({ hash });
+  //发起转账功能
+  const wagmiTransfer = async () => {
+    if (!isConnected) {
+      alert('请先连接钱包');
+      return;
+    }
+    if (!targetAddress) {
+      alert('请输入目标地址');
+      return;
+    }
+    if (!transferAmount) {
+      alert('请输入转账数量');
+      return;
+    }
+    setLoading(true);
+    console.log(` 开始转账>>>${transferConfig.amount}个代币到${transferConfig.recipientAddress}...`);
+
+    try {
+      //发送转账交易
+      const result = writeContract({
+        address: process.env.NEXT_PUBLIC_ERC20_CONTRACT_ADDRESS as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'transfer',
+        args: [targetAddress as `0x${string}`, parseEther(transferAmount)],
+        chainId: sepolia.id,
+      })
+      console.log('wagmi sepolia转账结果:', result);
+      setLoading(false);
+      alert('转账成功');
+    } catch (e) {
+      console.log('wagmi sepolia转账失败:', e);
+      setLoading(false);
+      alert('转账异常了..... 请检查操作..........');
+    }
+  }
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-2">实现ERC20token的转账功能</h1>
@@ -126,10 +187,11 @@ export default function Erc20TransferPage() {
         <input onChange={dealAmountChange} type="text" className="border-2 border-gray-300 p-2 rounded-md ml-3" />
       </div>
       <div className='flex flex-row items-center mt-4'>
-        <button onClick={transfer} className="bg-red-500 text-white pl-6 pr-6 py-2 rounded-md ">转账</button>
-        <div className="ml-3 font-bold text-red-500">
-          {loading && '正在努力转账中...'}
-        </div>
+        <button onClick={transfer} className="bg-red-500 text-white pl-6 pr-6 py-2 rounded-md ">转账(ethers)</button>
+        <button onClick={wagmiTransfer} className="bg-red-500 text-white pl-6 pr-6 py-2 rounded-md ml-3">转账(wagmi)</button>
+      </div>
+      <div className="ml-3 font-bold text-red-500 mt-2">
+        {loading && '正在努力转账中...'}
       </div>
 
       <div>------------------------------目标地址余额查询（转账前先查询一下）-----------------------------------</div>
