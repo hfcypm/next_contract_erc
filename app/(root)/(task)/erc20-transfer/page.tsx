@@ -153,14 +153,14 @@ export default function Erc20TransferPage() {
 
     try {
       //发送转账交易
-      const result = writeContract({
+      writeContract({
         address: process.env.NEXT_PUBLIC_ERC20_CONTRACT_ADDRESS as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'transfer',
         args: [targetAddress as `0x${string}`, parseEther(transferAmount)],
         chainId: sepolia.id,
       })
-      console.log('wagmi sepolia转账结果:', result);
+      console.log('wagmi sepolia转账成功');
       setLoading(false);
       alert('转账成功');
     } catch (e) {

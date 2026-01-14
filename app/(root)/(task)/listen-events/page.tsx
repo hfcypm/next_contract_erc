@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import { useEffect, useRef, useState } from "react";
+import { ethers, parseEther } from "ethers";
 import transferConfig from '../const/transferConfig';
 import ERC20_ABI from '../const/ercABI';
+import { useAccountEffect, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { sepolia } from "viem/chains";
 
 
 
@@ -162,6 +164,69 @@ export default function ListenEventsPage() {
     setBalance(`${ethers.formatEther(balance)}`);
   }
 
+  //使用 wagmi 进行转账
+  //检查钱包连接状态
+  const [isConnected, setConnected] = useState<boolean>(false);
+  useAccountEffect({
+    onConnect(data) {
+      console.log('连接钱包成功', data);
+      setConnected(true);
+    }, onDisconnect() {
+      console.log('断开连接钱包成功');
+      setConnected(false);
+    }
+  })
+
+  const { writeContract, data: hash } = useWriteContract();
+  const { isSuccess: isConfirmed, data: receipt } = useWaitForTransactionReceipt({ hash, chainId: sepolia.id });
+  //给它做个标记用 防止重复执行
+  const isSuccessRef = useRef(false);
+
+  ///监听交易成功事件
+  useEffect(() => {
+    if (isConfirmed && hash && !isSuccessRef.current) {
+      isSuccessRef.current = true;
+      setLoading(false);
+      const dealSuccess = () => {
+        console.log('刚刚转账的信息是：', receipt);
+        alert(`交易成功！哈希值：${hash}`);
+        setContentEvent(`交易成功！哈希值：${hash}`);
+      }
+      dealSuccess();
+    }
+  }, [isConfirmed, hash, receipt]);
+  //发起转账功能
+  const transferWagmi = async () => {
+    if (!isConnected) {
+      alert('请先连接钱包');
+      return;
+    }
+    if (!targetAddress) {
+      alert('请输入目标地址');
+      return;
+    }
+    if (!transferAmount) {
+      alert('请输入转账数量');
+      return;
+    }
+    try {
+      setLoading(true);
+      //发起转账
+      writeContract({
+        address: transferConfig.tokenContractAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'transfer',
+        args: [targetAddress as `0x${string}`, parseEther(transferAmount)],
+        chainId: sepolia.id,
+      });
+      console.log('wagmi sepolia已发起转账....稍等中......');
+    } catch (e) {
+      console.log('wagmi sepolia转账失败:', e);
+      setLoading(false);
+      alert('转账异常了..... 请检查操作..........');
+    }
+  }
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-2">监听 ERC-20 合约的 Transfer 事件</h1>
@@ -190,10 +255,11 @@ export default function ListenEventsPage() {
         <input onChange={dealAmountChange} type="text" className="border-2 border-gray-300 p-2 rounded-md ml-3" />
       </div>
       <div className='flex flex-row items-center mt-4'>
-        <button onClick={transfer} className="bg-red-500 text-white pl-6 pr-6 py-2 rounded-md ">转账</button>
-        <div className="ml-3 font-bold text-red-500">
-          {loading && '正在努力转账中...'}
-        </div>
+        <button onClick={transfer} className="bg-red-500 text-white pl-6 pr-6 py-2 rounded-md ">转账(ethers)</button>
+        <button onClick={transferWagmi} className="bg-red-500 text-white pl-6 pr-6 py-2 rounded-md ml-2">转账(wagmi)</button>
+      </div>
+      <div className="font-bold text-red-500 mt-2">
+        {loading && '正在努力转账中...'}
       </div>
 
       <div>------------------------------目标地址余额查询（转账前先查询一下）-----------------------------------</div>
