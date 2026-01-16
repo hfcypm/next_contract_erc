@@ -207,12 +207,12 @@ export default function SendEthPage() {
       const walletBalance = await publicClient.getBalance({
         address: address as Address,
       });
-      setBalance1(`${ethers.formatEther(walletBalance)} ETH`);
+      setBalance1(`${ethers.formatEther(walletBalance)}`);
       //钱包2 余额
       const walletBalance2 = await publicClient.getBalance({
         address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as Address,
       });
-      setBalance2(`${ethers.formatEther(walletBalance2)} ETH`);
+      setBalance2(`${ethers.formatEther(walletBalance2)}`);
       setLoading(false);
     } catch (error) {
       console.log(error);
@@ -227,12 +227,12 @@ export default function SendEthPage() {
       const walletBalance = await publicClient.getBalance({
         address: address as Address,
       });
-      setAfterBalance1(`${ethers.formatEther(walletBalance)} ETH`);
+      setAfterBalance1(`${ethers.formatEther(walletBalance)}`);
       //钱包2 余额
       const walletBalance2 = await publicClient.getBalance({
         address: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as Address,
       });
-      setAfterBalance2(`${ethers.formatEther(walletBalance2)} ETH`);
+      setAfterBalance2(`${ethers.formatEther(walletBalance2)}`);
     } catch (error) {
       console.log(error);
     }
@@ -251,14 +251,20 @@ export default function SendEthPage() {
     setLoading(true);
     //-------viem真实发送ETH 数据------------------
     try {
+      // 注意：这里需要使用私钥创建账户，而不是直接使用连接的钱包地址
+      const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+      if (!privateKey) {
+        alert('私钥为空 请检查环境变量 NEXT_PUBLIC_PRIVATE_KEY');
+        return;
+      }
+      const account = privateKeyToAccount(`0x${privateKey.replace('0x', '')}`);
       //创建钱包及添加(当前连接钱包的私钥)
       const walletClient: WalletClient = createWalletClient({
         chain: sepolia,
         transport: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
-        account: address,
       });
+
       //构建发送交易对象
-      const [account] = await walletClient.getAddresses();
       const sendReqObj = {
         account,
         to: process.env.NEXT_PUBLIC_BALANCE_ADDRESS2 as Address,
@@ -345,7 +351,7 @@ export default function SendEthPage() {
       <div className='flex flex-row'>
         <button onClick={transfer} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md">发送 ETH(ethers)</button>
         <button onClick={transferWagmi} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2">发送 ETH(wagmi)</button>
-        <button onClick={transferWagmi} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2">发送 ETH(viem)</button>
+        <button onClick={sendETHViem} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2">发送 ETH(viem)</button>
       </div>
       <button onClick={connectWallet} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md">连接钱包</button>
       <button onClick={queryBlanceViem} className="bg-purple-500  hover:bg-purple-600 text-white px-4 py-2 mt-5 rounded-md ml-2">查询转账前余额</button>
