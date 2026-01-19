@@ -20,7 +20,7 @@ export default function CheckBalancePage() {
     setSepBalance('--');
   }
   //-----------------------------wagmi--------------------------------
-  //通过useAmount 获取当前的连接状态（如状态  地址信息）
+  //通过useAccountEffect 获取当前的连接状态（如状态  地址信息）
   useAccountEffect({
     onConnect: (data) => {
       console.log('连接信息：', data.address);
